@@ -1,0 +1,273 @@
+
+import { Chat } from '@google/genai';
+
+export type Mode = 'aetheros';
+
+export type MainView = 'chat' | 'diagnostics' | 'prompts' | 'workshop' | 'communications' | 'vault' | 'module_bay' | 'command_deck' | 'strategic_overview' | 'device_link' | 'system_archives' | 'forge' | 'singularity_engine' | 'up_north' | 'code_agent' | 'projects' | 'nexus' | 'zurich' | 'enlightenment_pool' | 'pseudorole_testing' | 'integrity_network' | 'launch_center' | 'network_sentinel' | 'bluetooth_bridge';
+
+export type VehicleSystem = 'Engine' | 'Battery' | 'Navigation' | 'Infotainment' | 'Handling';
+export type SystemState = 'OK' | 'Warning' | 'Error';
+export type SystemStatus = Record<VehicleSystem, SystemState>;
+
+export type KnowledgeTier = 'UNIVERSAL' | 'OBFUSCATED' | 'PROHIBITED';
+
+export interface DetailedDiagnostic {
+  code: string;
+  oem: string;
+  meaning: string;
+  rootCauses: string[];
+  healingSteps: string[];
+  maestroInsight: string;
+  impactOnSquad: string;
+}
+
+export interface BluetoothProtocol {
+  id: string;
+  name: string;
+  category: 'Core' | 'GATT' | 'Mesh' | 'Auracast' | 'Traditional';
+  description: string;
+  commonUUIDs: string[];
+  designConstraints: string[];
+}
+
+export interface BluetoothBlueprint {
+  protocol: string;
+  architecture: string;
+  codeSnippet: string;
+  packetStructure: string;
+  integritySignature: string;
+}
+
+export interface LiveTelemetryFrame {
+  timestamp: number;
+  rpm: number;
+  coolantTemp: number;
+  fuelPressure: number;
+  voltage: number;
+  load: number;
+  throttlePos: number;
+}
+
+export interface KnowledgeFragment {
+  id: string;
+  label: string;
+  description: string;
+  isVerified: boolean;
+  integrityThreshold: number;
+  tier: KnowledgeTier;
+}
+
+export interface HeuristicConstraint {
+  id: string;
+  label: string;
+  description: string;
+  tier: KnowledgeTier;
+  miseryRequirement: number;
+  isUnlocked: boolean;
+}
+
+export interface AppStoreMetadata {
+  appName: string;
+  description: string;
+  keywords: string[];
+  dunsNumber: string;
+  ageRating: '4+' | '9+' | '12+' | '17+';
+  primaryCategory: string;
+}
+
+export interface CompliancePosture {
+  gdprActive: boolean;
+  ccpaActive: boolean;
+  gpcHonored: boolean;
+  ageVerificationStatus: 'UNCONFIGURED' | 'READY' | 'ACTIVE';
+}
+
+export interface SystemDetails {
+  'Engine': { temperature: number };
+  'Battery': { voltage: number };
+  'Navigation': { signal: 'Strong' | 'Moderate' | 'Weak' | 'None' };
+  'Infotainment': { media: string };
+  'Handling': { suspensionMode: 'Comfort' | 'Sport' | 'Track'; tractionControl: 'Enabled' | 'Disabled' | 'Limited' };
+}
+
+export interface NetworkProject {
+  id: string;
+  title: string;
+  description: string;
+  miseryScore: number;
+  crazyLevel: number;
+  status: 'IDEATING' | 'BUILDING' | 'DONE';
+  isWisdomHarmonized: boolean;
+  timestamp: Date;
+}
+
+export interface GroundingSource {
+  uri: string;
+  title: string;
+}
+
+export interface ChatMessage {
+  sender: 'user' | 'model';
+  content: string;
+  timestamp: Date;
+  parentTimestamp?: Date;
+  attachedFiles?: string[];
+  isAutoPrompt?: boolean;
+  interactionPrompt?: InteractionPrompt;
+  pathId?: string;
+  groundingSources?: GroundingSource[];
+}
+
+export interface ShadowInfoCard {
+  signature: string;
+  flowRole: string;
+  dependency: string;
+  boundaries: {
+    havLimit: number;
+    noiseLimit: number;
+  };
+  logicBlueprint: string;
+}
+
+export interface TelemetryState {
+  velocity: 'Liquid' | 'Rigid';
+  velocityValue: number;
+  miningDifficulty: number;
+  opaqueZones: string[];
+  collisionPoints: string[];
+  hav: number;
+  noise: number;
+  fusionConfidence?: number;
+  effectiveness?: number;
+  uptime?: number;
+}
+
+export interface AuditReport {
+  fuelBurned: { electricity: number; gas: number };
+  treasuryCost: number;
+  integrityScore: number;
+  nonce: number;
+  semanticDrift: number;
+  effectivenessScore?: number;
+}
+
+export interface DiagnosticTroubleCode {
+  code: string;
+  description: string;
+  system: VehicleSystem;
+  severity: 'Warning' | 'Error';
+  signature?: string;
+}
+
+export interface InteractionPrompt {
+  prompt: string;
+  submittedAnswer?: string;
+}
+
+export interface BroadcastMessage {
+  source: string;
+  text: string;
+  timestamp: Date;
+  color: string;
+}
+
+export interface CustomAIConfig {
+  name: string;
+  prompt: string;
+  logicPrompt: string;
+}
+
+export type ScanStatus = 'unscanned' | 'scanning' | 'complete' | 'error';
+
+export interface AttachedFile {
+  name:string;
+  content: string; // base64
+  type: string;
+  scanStatus?: ScanStatus;
+  scanResult?: string;
+}
+
+export interface ImplementationFile {
+  filename: string;
+  code: string;
+}
+
+export interface ImplementationResponse {
+  files: ImplementationFile[];
+}
+
+export interface SavedModule extends ImplementationResponse {
+  id: string;
+  name: string;
+  timestamp: Date;
+}
+
+export interface ChatSession {
+  id: string;
+  mode: Mode;
+  messages: ChatMessage[];
+  chat: Chat;
+  name: string;
+}
+
+export interface EvoPrompt {
+  title: string;
+  text: string;
+}
+
+export interface EvoCategory {
+  id: string;
+  name: string;
+  description?: string;
+  prompts: EvoPrompt[];
+}
+
+export interface EvoLibrary {
+  library: string;
+  version: string;
+  categories: EvoCategory[];
+}
+
+export interface CustomCommand {
+  id: string;
+  title: string;
+  text: string;
+  timestamp: Date;
+}
+
+export type PinType = 'module' | 'command';
+
+export interface PinnedItem {
+  id: string;
+  referenceId: string;
+  type: PinType;
+  title: string;
+  content?: string;
+}
+
+export type DeviceLinkStatus = 'disconnected' | 'connecting' | 'connected';
+
+export interface LinkedDevice {
+  name: string;
+  type: 'Phone' | 'Laptop' | 'Desktop';
+}
+
+export interface ArchiveEntry {
+  id: string;
+  title: string;
+  text: string;
+  timestamp: Date;
+  isDirective?: boolean;
+}
+
+export type BlueprintStatus = 'Pending' | 'In Progress' | 'Completed' | 'On Hold';
+export type BlueprintPriority = 'Low' | 'Medium' | 'High' | 'Critical';
+
+export interface ProjectBlueprint {
+  id: string;
+  title: string;
+  description: string;
+  status: BlueprintStatus;
+  priority: BlueprintPriority;
+  timestamp: Date;
+}

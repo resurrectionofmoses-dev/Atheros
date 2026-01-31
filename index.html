@@ -1,0 +1,133 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <title>AetherOS | The Maestro's Conjunction Series</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#ef4444">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" integrity="sha384-n8MVd4RsNIU0KOVEMeaMurLxlpHCzU+q5TOqQTJ9gsMvG1OKHIZjQHzFP/UEU/BC" crossorigin="anonymous">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Comic+Neue:wght@400;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <script type="importmap">
+{
+  "imports": {
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "react": "https://esm.sh/react@^19.2.3",
+    "@google/genai": "https://esm.sh/@google/genai@^1.35.0",
+    "jszip": "https://esm.sh/jszip@3.10.1",
+    "react-katex": "https://esm.sh/react-katex@3.0.1",
+    "katex": "https://esm.sh/katex@0.16.9",
+    "uuid": "https://esm.sh/uuid@9.0.1"
+  }
+}
+</script>
+<style>
+  :root {
+    --vista-blue: rgba(0, 120, 215, 0.6);
+    --wisdom-gold: #fbbf24;
+    --insight-sapphire: #3b82f6;
+    --maestro-ruby: #ef4444;
+    --aero-glass: rgba(10, 15, 30, 0.6);
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --conjunction-crimson: #991b1b;
+  }
+  
+  body {
+    background: #02040a;
+    font-family: 'JetBrains Mono', monospace;
+    color: #f3f4f6;
+    height: 100vh;
+    height: -webkit-fill-available;
+    overflow: hidden;
+    background-image: 
+        radial-gradient(circle at 10% 20%, rgba(239, 68, 68, 0.05) 0%, transparent 40%),
+        radial-gradient(circle at 90% 80%, rgba(59, 130, 246, 0.05) 0%, transparent 40%);
+    overscroll-behavior-y: contain;
+  }
+
+  html {
+    height: -webkit-fill-available;
+  }
+
+  .aero-panel {
+    background: var(--aero-glass);
+    backdrop-filter: blur(40px) saturate(200%);
+    border: 2px solid var(--glass-border);
+    box-shadow: 0 30px 80px -20px rgba(0, 0, 0, 0.9),
+                10px 10px 0px 0px rgba(0, 0, 0, 0.5),
+                inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+    border-radius: 24px;
+    transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+  }
+
+  .vista-button {
+    background: linear-gradient(180deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.05) 50%, rgba(0,0,0,0.5) 100%);
+    border: 2px solid rgba(255,255,255,0.2);
+    box-shadow: 4px 4px 0px 0px rgba(0, 0, 0, 0.8);
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    text-shadow: 0 2px 4px rgba(0,0,0,0.9);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .wisdom-glow {
+    text-shadow: 0 0 15px var(--maestro-ruby), 0 0 30px rgba(239, 68, 68, 0.5);
+  }
+
+  .font-comic-header {
+    font-family: 'Bangers', cursive;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    font-style: italic;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: var(--conjunction-crimson);
+    border-radius: 4px;
+  }
+
+  @media (max-width: 768px) {
+    .font-comic-header {
+      letter-spacing: 2px;
+    }
+  }
+</style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="index.tsx"></script>
+    <script>
+      // Enhanced Service Worker registration to handle origin constraints in restricted environments
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          try {
+            const swPath = './sw.js';
+            // Determine if the environment supports Service Workers and handles paths correctly
+            // Using absolute relative path to ensure the scope is correctly identified as same-origin
+            navigator.serviceWorker.register(swPath, { scope: './' })
+              .then(reg => {
+                console.log('Maestro Service Worker Active | Conjunction Domain:', reg.scope);
+              })
+              .catch(err => {
+                // Gracefully log environmental constraints without breaking the core app
+                console.warn('Conjunction Bridge: Service Worker Restricted by Environment.', err.message);
+              });
+          } catch (e) {
+            console.warn('Conjunction Bridge: Synchronous failure in Service Worker load logic.');
+          }
+        });
+      }
+    </script>
+  </body>
+</html>

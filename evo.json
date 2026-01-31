@@ -1,0 +1,102 @@
+
+{
+  "library": "Evo Prompts",
+  "version": "2.0",
+  "categories": [
+    {
+      "id": "diagnostics",
+      "name": "Diagnostics & Troubleshooting",
+      "description": "Prompts for identifying and understanding vehicle issues.",
+      "prompts": [
+        {
+          "title": "Full System Sweep",
+          "text": "Run a full diagnostic sweep on all vehicle systems and report any anomalies, warnings, or errors you find."
+        },
+        {
+          "title": "Explain DTC",
+          "text": "I see an alert for code P0420. Can you explain what this diagnostic trouble code means and suggest a course of action?"
+        },
+        {
+          "title": "Analyze Symptom",
+          "text": "I've noticed a slight vibration when accelerating above 60 mph. What are the most likely causes for this?"
+        }
+      ]
+    },
+    {
+      "id": "performance",
+      "name": "Performance & Efficiency",
+      "description": "Prompts for optimizing vehicle performance and economy.",
+      "prompts": [
+        {
+          "title": "Improve Fuel Efficiency",
+          "text": "Suggest three ways I can improve my vehicle's fuel efficiency for a long road trip I have planned for next week."
+        },
+        {
+          "title": "Sport Mode Tuning",
+          "text": "How can I adjust the suspension and throttle response settings for a sportier driving experience on a closed track?"
+        },
+        {
+          "title": "Analyze Driving Style",
+          "text": "Analyze my driving data from the last 50 miles and recommend changes to my driving style for better battery conservation."
+        }
+      ]
+    },
+    {
+      "id": "navigation",
+      "name": "Navigation & Trip Planning",
+      "description": "Prompts for advanced route-finding and travel assistance.",
+      "prompts": [
+        {
+          "title": "Scenic Route",
+          "text": "Plan a scenic route from San Francisco to Los Angeles, avoiding major highways. Include at least two charging stops with fast chargers."
+        },
+        {
+          "title": "Find Points of Interest",
+          "text": "What are some interesting historical points of interest along my current route to Denver, Colorado?"
+        },
+        {
+          "title": "Emergency Route",
+          "text": "Find the fastest route to the nearest hospital with an emergency room, taking into account current traffic conditions."
+        }
+      ]
+    },
+    {
+      "id": "system_commands",
+      "name": "System Commands & Info",
+      "description": "Prompts for interacting with vehicle systems.",
+      "prompts": [
+        {
+          "title": "Set Cabin Climate",
+          "text": "Set cabin temperature to 21 degrees Celsius and engage the 'Nebula' ambient lighting profile."
+        },
+        {
+          "title": "Firmware Features",
+          "text": "Explain the key features and improvements in the latest firmware update (v3.1.4) in simple terms."
+        },
+        {
+          "title": "Vehicle Status Summary",
+          "text": "Provide a summary of my vehicle's operational status over the last 24 hours, including battery usage and efficiency."
+        }
+      ]
+    },
+    {
+      "id": "communications",
+      "name": "Bridge Communications",
+      "description": "Prompts for interacting with communications channels.",
+      "prompts": [
+        {
+          "title": "Hail Fleet Command",
+          "text": "Open a secure channel to Fleet Command and request a status update on operation Chimera."
+        },
+        {
+          "title": "Scan Broadcasts",
+          "text": "Scan open channels for any mention of the freighter 'Odyssey'. Summarize your findings."
+        },
+        {
+          "title": "Log Distress Call",
+          "text": "Log the last distress call from the 'UNKNOWN SIGNAL' and plot its origin coordinates on the navigation map."
+        }
+      ]
+    }
+  ]
+}
