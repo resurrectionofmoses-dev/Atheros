@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo } from 'react';
 import type { SystemStatus, VehicleSystem, SystemState, SystemDetails, MainView } from '../types';
-import { EngineIcon, BatteryIcon, NavigationIcon, InfotainmentIcon, ChevronDownIcon, WarningIcon, WrenchIcon, ServerIcon, ThermometerIcon, ZapIcon, SignalIcon, MusicIcon, BookOpenIcon, BuildIcon, BroadcastIcon, PackageIcon, AetherOSIcon, FireIcon, ShareIcon, ArchiveIcon, SteeringWheelIcon, SuspensionIcon, TractionIcon, ForgeIcon, ActivityIcon, TerminalIcon, CodeIcon, ShieldIcon, SearchIcon, LogicIcon, BrainIcon, UserIcon, StarIcon } from './icons';
+import { EngineIcon, BatteryIcon, NavigationIcon, InfotainmentIcon, ChevronDownIcon, WarningIcon, WrenchIcon, ServerIcon, ThermometerIcon, ZapIcon, SignalIcon, MusicIcon, BookOpenIcon, BuildIcon, BroadcastIcon, PackageIcon, AetherOSIcon, FireIcon, ShareIcon, ArchiveIcon, SteeringWheelIcon, SuspensionIcon, TractionIcon, ForgeIcon, ActivityIcon, TerminalIcon, CodeIcon, ShieldIcon, SearchIcon, LogicIcon, BrainIcon, UserIcon, StarIcon, DownloadIcon, RulesIcon } from './icons';
 
 interface SidebarProps {
   systemStatus: SystemStatus;
@@ -19,7 +19,10 @@ const systemDetailsMap: Record<VehicleSystem, { icon: React.FC<{className?: stri
 };
 
 const operations: { view: MainView; text: string; icon: React.FC<{className?: string}> }[] = [
-    { view: 'launch_center', text: 'App Store Launch', icon: StarIcon },
+    { view: 'coding_network', text: 'Coding Grid', icon: CodeIcon },
+    { view: 'covenant', text: 'Network Covenant', icon: RulesIcon },
+    { view: 'launch_center', text: 'Deployment Center', icon: DownloadIcon },
+    { view: 'packaging_suite', text: 'Packaging Suite', icon: PackageIcon },
     { view: 'code_agent', text: 'Maestro Solo', icon: MusicIcon },
     { view: 'enlightenment_pool', text: 'Conjunction Pool', icon: BrainIcon },
     { view: 'integrity_network', text: 'Sisters: Wisdom', icon: ShieldIcon },
@@ -105,7 +108,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ systemStatus, systemDetails, c
                 {operations.map(({ view, text, icon: Icon }) => {
                     const isActive = currentView === view;
                     const isSisters = view === 'integrity_network' || view === 'strategic_overview';
-                    const isSpecial = view === 'launch_center' || view === 'network_sentinel';
+                    const isSpecial = view === 'launch_center' || view === 'network_sentinel' || view === 'packaging_suite' || view === 'coding_network' || view === 'covenant';
                     const isBlue = view === 'bluetooth_bridge';
                     
                     return (
@@ -118,7 +121,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ systemStatus, systemDetails, c
                                     : 'bg-black/40 text-gray-500 border-black'
                             } hover:scale-[1.02]`}
                         >
-                            <Icon className={`w-4 h-4 ${isActive ? 'wisdom-glow text-white' : (isBlue ? 'text-blue-800' : isSisters ? 'text-cyan-800' : isSpecial ? 'text-amber-800' : 'text-gray-700')}`} />
+                            <Icon className={`w-4 h-4 ${isActive ? 'wisdom-glow text-white' : (isBlue ? 'text-blue-800' : isSisters ? 'text-cyan-800' : isSpecial ? (view === 'covenant' ? 'text-amber-500' : 'text-emerald-700') : 'text-gray-700')}`} />
                             <span className={`text-[9px] font-black uppercase tracking-[0.1em] ${isActive ? 'text-white' : ''}`}>{text}</span>
                         </button>
                     );

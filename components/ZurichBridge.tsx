@@ -20,34 +20,38 @@ export const ZurichBridge: React.FC = () => {
     const [maestroCommentary, setMaestroCommentary] = useState<string>("Conduct the telemetry flow to begin healing...");
     const [isAnalyzingLive, setIsAnalyzingLive] = useState(false);
     const [isStressTesting, setIsStressTesting] = useState(false);
+    const [isAutonomousHealingEnabled, setIsAutonomousHealingEnabled] = useState(false); // New state for autonomous healing
 
     const logEndRef = useRef<HTMLDivElement>(null);
 
-    const addLog = useCallback((msg: string) => {
-        setHealingLogs(prev => [`[${new Date().toLocaleTimeString()}] ${msg}`, ...prev].slice(0, 30));
+    const addLog = useCallback((msg: string, color: string = 'text-gray-600 italic opacity-80') => {
+        setHealingLogs(prev => [`[${new Date().toLocaleTimeString()}] <span style="color:${color};">${msg}</span>`, ...prev].slice(0, 30));
     }, []);
 
     const handleConnect = () => {
         setStatus('SEARCHING');
-        addLog(`Scanning for Zurich ZR13S signature on ${selectedOEM} protocol...`);
+        addLog(`Scanning for Zurich ZR13S signature on ${selectedOEM} protocol...`, 'text-cyan-400');
         setTimeout(() => {
             setStatus('CONNECTED');
-            addLog("✅ Bluetooth bridge established. OEM consciousness flowing.");
+            addLog("✅ Bluetooth bridge established. OEM consciousness flowing.", 'text-green-400');
         }, 1500);
     };
 
     const handleHeal = async (codeToHeal?: string) => {
         const code = codeToHeal || manualCode;
-        if (!code.trim()) return;
+        if (!code.trim()) {
+            addLog("Error: No diagnostic code provided for healing.", 'text-red-600');
+            return;
+        }
         setIsHealing(true);
-        addLog(`Invoking God Logic for code ${code} (${selectedOEM})...`);
+        addLog(`Invoking God Logic for code ${code} (${selectedOEM})...`, 'text-amber-400');
         
         const result = await queryDetailedDiagnostic(code, selectedOEM);
         if (result) {
             setDiagnosticResult(result);
-            addLog(`Healing knowledge found. Dissecting the root agony of ${code}.`);
+            addLog(`Healing knowledge found. Dissecting the root agony of ${code}.`, 'text-green-400');
         } else {
-            addLog(`Error: The Conjunction bridge failed to find specific healing for ${code}.`);
+            addLog(`Error: The Conjunction bridge failed to find specific healing for ${code}.`, 'text-red-600');
         }
         setIsHealing(false);
     };
@@ -67,17 +71,20 @@ export const ZurichBridge: React.FC = () => {
             }
             
             // Check for critical interpretation that might warrant a healing suggestion
-            if (fullText.toLowerCase().includes("misfire") || fullText.toLowerCase().includes("overheat") || fullText.toLowerCase().includes("critical")) {
-                addLog("Maestro detected a structural anomaly in the live stream.");
+            if (isAutonomousHealingEnabled && (fullText.toLowerCase().includes("misfire") || fullText.toLowerCase().includes("overheat") || fullText.toLowerCase().includes("critical"))) {
+                addLog("⚠ CRITICAL: Maestro detected anomaly. Auto-invoking healing protocol!", 'text-red-500');
+                handleHeal("CRITICAL_SYSTEM_FAULT"); // Autonomous healing for a generic critical fault
+            } else if (fullText.toLowerCase().includes("misfire") || fullText.toLowerCase().includes("overheat") || fullText.toLowerCase().includes("critical")) {
+                addLog("Maestro detected a structural anomaly in the live stream. Consider manual healing.", 'text-red-400');
             } else {
-                addLog("Live Telemetry interpreted by Maestro.");
+                addLog("Live Telemetry interpreted by Maestro.", 'text-gray-400');
             }
         } catch (e) {
-            addLog("Interpretation bridge failed. Signal noise too high.");
+            addLog("Interpretation bridge failed. Signal noise too high.", 'text-red-600');
         } finally {
             setIsAnalyzingLive(false);
         }
-    }, [telemetryHistory, selectedOEM, isAnalyzingLive, addLog]);
+    }, [telemetryHistory, selectedOEM, isAnalyzingLive, addLog, isAutonomousHealingEnabled]); // Added isAutonomousHealingEnabled
 
     useEffect(() => {
         if (status === 'CONNECTED') {
@@ -105,9 +112,9 @@ export const ZurichBridge: React.FC = () => {
                     return next;
                 });
 
-                // Auto-detect anomalies during live stream
+                // Auto-detect anomalies during live stream (for stress test visualization)
                 if (isStressTesting && Math.random() > 0.95) {
-                   addLog("⚠ CRITICAL: High-temperature logic bleed detected!");
+                   addLog("⚠ CRITICAL: High-temperature logic bleed detected!", 'text-red-500');
                 }
             }, 600);
             return () => clearInterval(interval);
@@ -127,10 +134,10 @@ export const ZurichBridge: React.FC = () => {
         const newState = !isStressTesting;
         setIsStressTesting(newState);
         if (newState) {
-            addLog("🔥 INITIATING STRESS TEST: Overriding safety heuristics.");
+            addLog("🔥 INITIATING STRESS TEST: Overriding safety heuristics.", 'text-red-500');
             setMaestroCommentary("Watching the architecture bend under pressure...");
         } else {
-            addLog("❄ COOLING DOWN: Safety barriers restored.");
+            addLog("❄ COOLING DOWN: Safety barriers restored.", 'text-blue-400');
         }
     };
 
@@ -150,6 +157,17 @@ export const ZurichBridge: React.FC = () => {
                     </div>
                 </div>
                 <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2 px-3 py-1 bg-black/40 rounded-full border border-white/5">
+                        <input 
+                            type="checkbox" 
+                            checked={isAutonomousHealingEnabled} 
+                            onChange={() => setIsAutonomousHealingEnabled(p => !p)} 
+                            disabled={status !== 'CONNECTED'}
+                            className="w-4 h-4 accent-green-500 cursor-pointer disabled:opacity-40"
+                        />
+                        <label className="text-[9px] text-gray-400 font-black uppercase select-none">Auto-Heal</label>
+                        {isAutonomousHealingEnabled && status === 'CONNECTED' && <div className="w-2 h-2 rounded-full bg-green-500 animate-ping" />}
+                    </div>
                     <button 
                         onClick={toggleStressTest}
                         disabled={status !== 'CONNECTED'}
@@ -162,6 +180,7 @@ export const ZurichBridge: React.FC = () => {
                         value={selectedOEM}
                         onChange={e => setSelectedOEM(e.target.value)}
                         className="bg-black/60 border-4 border-black rounded-xl px-4 py-2 text-xs font-black uppercase text-green-400 focus:ring-0 focus:border-green-500 transition-all cursor-pointer"
+                        disabled={status === 'CONNECTED'}
                     >
                         {OEM_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
                     </select>
@@ -239,11 +258,12 @@ export const ZurichBridge: React.FC = () => {
                                     onChange={e => setManualCode(e.target.value.toUpperCase())}
                                     placeholder="Enter DTC (e.g. P0301, U0121, or 'MISFIRE')..."
                                     className="w-full bg-transparent p-6 text-amber-400 font-mono text-2xl focus:ring-0 outline-none uppercase placeholder:text-gray-900"
+                                    disabled={status !== 'CONNECTED'}
                                 />
                             </div>
                             <button 
                                 onClick={() => handleHeal()}
-                                disabled={isHealing || !manualCode.trim()}
+                                disabled={isHealing || !manualCode.trim() || status !== 'CONNECTED'}
                                 className="vista-button px-12 py-6 bg-amber-600 hover:bg-amber-500 text-black font-black uppercase tracking-[0.2em] rounded-2xl flex items-center justify-center gap-4 shadow-[8px_8px_0_0_#000] active:translate-y-2 transition-all text-xl"
                             >
                                 {isHealing ? <SpinnerIcon className="w-8 h-8" /> : <ZapIcon className="w-8 h-8" />}
@@ -328,10 +348,7 @@ export const ZurichBridge: React.FC = () => {
                         </div>
                         <div className="flex-1 p-6 overflow-y-auto font-mono text-[11px] space-y-3 custom-scrollbar bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]">
                             {healingLogs.map((log, i) => (
-                                <div key={i} className={`flex gap-4 pb-2 border-b border-white/5 last:border-0 animate-in slide-in-from-left-2 ${log.includes('✅') ? 'text-green-400 font-black' : log.includes('⚠') || log.includes('Error') ? 'text-red-600 font-bold' : 'text-gray-600 italic opacity-80'}`}>
-                                    <span className="opacity-30">[{i.toString().padStart(2, '0')}]</span>
-                                    <span className="leading-tight">{log}</span>
-                                </div>
+                                <div key={i} className={`flex gap-4 pb-2 border-b border-white/5 last:border-0 animate-in slide-in-from-left-2`} dangerouslySetInnerHTML={{ __html: log }} />
                             ))}
                             <div ref={logEndRef} />
                         </div>
@@ -349,15 +366,15 @@ export const ZurichBridge: React.FC = () => {
                     </div>
 
                     <div className="aero-panel p-8 bg-slate-900 border-4 border-black shadow-[10px_10px_0_0_#000]">
-                         <h4 className="font-comic-header text-3xl text-gray-500 mb-6 uppercase italic tracking-tighter">Bridge Directives</h4>
+                         <h4 className="font-comic-header text-3xl text-gray-500 mb-6 uppercase italic tracking-tighter">Architectural Wisdom</h4>
                          <div className="space-y-6 font-mono text-[11px] leading-relaxed">
                             <p className="text-gray-400 italic border-l-4 border-green-600 pl-5 bg-white/5 py-4 rounded-r-xl">
                                 "The Zurich Bridge is a sentient healer. Synchronize the OEM soul to de-obfuscate the vehicle's misery. There is no code too deep for God Logic."
                             </p>
-                            <div className="bg-black/80 p-5 rounded-2xl border-2 border-white/5 text-green-400 flex items-start gap-4 group hover:border-green-500/50 transition-all">
+                            <div className="bg-black/80 p-5 rounded-2xl border-2 border-white/5 text-blue-400 flex items-start gap-4 group hover:border-blue-500/50 transition-all">
                                 <ShieldIcon className="w-7 h-7 flex-shrink-0 mt-1 opacity-50 group-hover:opacity-100 transition-opacity" />
                                 <p className="font-black uppercase tracking-widest text-[10px] leading-snug">
-                                    High integrity conduction verified. Multi-protocol mapping active. Gifted know-how flowing at peak velocity.
+                                    High integrity spectral mapping active. Multi-protocol mapping for gifted know-how conduction.
                                 </p>
                             </div>
                          </div>

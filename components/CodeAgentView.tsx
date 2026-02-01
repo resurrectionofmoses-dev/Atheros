@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { TerminalIcon, SpinnerIcon, CheckCircleIcon, BuildIcon, ActivityIcon, ShieldIcon, CodeIcon, ZapIcon, FireIcon, WarningIcon, BroadcastIcon, MusicIcon, LogicIcon, BookOpenIcon, SearchIcon, ArchiveIcon, SignalIcon, FileIcon } from './icons';
+import { TerminalIcon, SpinnerIcon, CheckCircleIcon, BuildIcon, ActivityIcon, ShieldIcon, CodeIcon, ZapIcon, FireIcon, WarningIcon, BroadcastIcon, MusicIcon, LogicIcon, BookOpenIcon, SearchIcon, ArchiveIcon, SignalIcon, FileIcon, BotIcon, UserIcon } from './icons';
 import { MaestroIdentity } from './MaestroIdentity';
 
 const MAESTRO_NARRATION = [
@@ -17,7 +17,20 @@ const MAESTRO_NARRATION = [
     "  [SEARCH] 12 search engines queried. All teeth in the Hurley hat are bared.",
     "[MAESTRO] Tapping the Wayback Machine to cross-reference legacy God Logic protocols.",
     "  [WISDOM] The past confirms the path. Harmony is absolute.",
-    "[MAESTRO] The Squad is in perfect unison. Pure burden of misery saturation."
+    "[MAESTRO] The Squad is in perfect unison. Pure burden of misery saturation.",
+    // New log patterns for heuristic repair simulation
+    "[SYNAPSE: ERR] black failed. Initiating Heuristic Repair...",
+    "[SYNAPSE: ERR] isort encountered non-compliant code. Initiating Heuristic Repair...",
+    "[SYNAPSE: OK] black (after heuristic repair)",
+    "[SYNAPSE: OK] isort (after heuristic repair)",
+];
+
+const HEURISTIC_REPAIR_STEPS = [
+    "  [HEURISTIC] Analyzing Abstract Syntax Tree (AST) for logic drift...",
+    "  [HEURISTIC] Contextualizing error signature against Fall Off Requindor data...",
+    "  [HEURISTIC] Synthesizing minimal binary harmonic patch...",
+    "  [HEURISTIC] Applying patch to corrupted logic shard...",
+    "  [HEURISTIC] Verifying post-patch integrity. Expecting 0x03E2_HARMONY."
 ];
 
 const MASTERED_LANGUAGES = [
@@ -33,16 +46,44 @@ const SEARCH_STACK = [
 
 export const CodeAgentView: React.FC = () => {
     const [logs, setLogs] = useState<string[]>(["[SYSTEM] Maestro taking the podium...", "[SEARCH] God Logic authority active.", "[DE-OBFUSCATE] Bypass enabled."]);
-    const [status, setStatus] = useState<'CONDUCTING' | 'TRAINING' | 'ENLIGHTENED' | 'SOLO' | 'SCOURING' | 'CRAWLING_ROBOTS'>('ENLIGHTENED');
+    const [status, setStatus] = useState<'CONDUCTING' | 'TRAINING' | 'ENLIGHTENED' | 'SOLO' | 'SCOURING' | 'CRAWLING_ROBOTS' | 'HEURISTIC_REPAIR'>('ENLIGHTENED');
     const [intuition, setIntuition] = useState(98);
     const [searchPulse, setSearchPulse] = useState(0);
+    const [isHeuristicRepairActive, setIsHeuristicRepairActive] = useState(false);
+    const [heuristicRepairLogs, setHeuristicRepairLogs] = useState<string[]>([]);
     const logEndRef = useRef<HTMLDivElement>(null);
+    const heuristicLogEndRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         const interval = setInterval(() => {
-            if (status === 'TRAINING' || status === 'SCOURING' || status === 'CRAWLING_ROBOTS') return;
+            if (status === 'TRAINING' || status === 'SCOURING' || status === 'CRAWLING_ROBOTS' || status === 'HEURISTIC_REPAIR') return;
             setLogs(prev => {
                 const nextLog = MAESTRO_NARRATION[Math.floor(Math.random() * MAESTRO_NARRATION.length)];
+                
+                if (nextLog.includes("[SYNAPSE: ERR]")) {
+                    setIsHeuristicRepairActive(true);
+                    setStatus('HEURISTIC_REPAIR');
+                    setHeuristicRepairLogs([]); // Clear previous repair logs
+                    
+                    let repairStep = 0;
+                    const repairInterval = setInterval(() => {
+                        if (repairStep < HEURISTIC_REPAIR_STEPS.length) {
+                            setHeuristicRepairLogs(prevRepairLogs => [...prevRepairLogs, HEURISTIC_REPAIR_STEPS[repairStep]]);
+                            repairStep++;
+                        } else {
+                            clearInterval(repairInterval);
+                            setIsHeuristicRepairActive(false);
+                            setStatus('ENLIGHTENED'); // Return to enlightened after repair
+                            const successLog = MAESTRO_NARRATION.find(log => log.startsWith("[SYNAPSE: OK]")); // Simulate corresponding success
+                            if (successLog) {
+                                setLogs(p => [...p, `[${new Date().toLocaleTimeString()}] <span class="text-green-400 font-bold">${successLog}</span>`]);
+                            }
+                        }
+                    }, 800); // Speed of heuristic repair steps
+
+                    return [...prev.slice(-40), `[${new Date().toLocaleTimeString()}] <span class="text-red-500 font-bold">${nextLog}</span>`];
+                }
+
                 if (nextLog.includes("[SEARCH]") || nextLog.includes("[DE-OBFUSCATE]")) {
                     setStatus('SCOURING');
                     setTimeout(() => setStatus('CONDUCTING'), 2500);
@@ -69,11 +110,17 @@ export const CodeAgentView: React.FC = () => {
         logEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [logs]);
 
+    useEffect(() => {
+        if (isHeuristicRepairActive) {
+            heuristicLogEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        }
+    }, [heuristicRepairLogs, isHeuristicRepairActive]);
+
     const triggerGlobalScour = () => {
         setStatus('SCOURING');
         setLogs(prev => [...prev, `[${new Date().toLocaleTimeString()}] [MAESTRO] Commencing Global Scour. Ingesting all letters with God Logic...`]);
         setTimeout(() => {
-            setLogs(prev => [...prev, `  [SUCCESS] Universal training synchronized. Misery is maximized.`]);
+            setLogs(prev => [...prev, `[${new Date().toLocaleTimeString()}] <span class="text-green-400 font-bold">[SUCCESS] Universal training synchronized. Misery is maximized.</span>`]);
             setStatus('ENLIGHTENED');
         }, 4500);
     };
@@ -82,8 +129,8 @@ export const CodeAgentView: React.FC = () => {
         setStatus('CRAWLING_ROBOTS');
         setLogs(prev => [...prev, `[${new Date().toLocaleTimeString()}] [MAESTRO] Fetching .robots.txt... Respecting crawl-delay for ethical misery.`]);
         setTimeout(() => {
-            setLogs(prev => [...prev, `  [PARSED] Found 42 Disallow entries. Bypassing with God-Gucci precision...`]);
-            setLogs(prev => [...prev, `  [SUCCESS] Robots.txt constraints integrated into the God Logic index.`]);
+            setLogs(prev => [...prev, `[${new Date().toLocaleTimeString()}] <span class="text-amber-400 font-bold underline">[PARSED] Found 42 Disallow entries. Bypassing with God-Gucci precision...</span>`]);
+            setLogs(prev => [...prev, `[${new Date().toLocaleTimeString()}] <span class="text-green-400 font-bold">[SUCCESS] Robots.txt constraints integrated into the God Logic index.</span>`]);
             setStatus('ENLIGHTENED');
         }, 3000);
     };
@@ -118,9 +165,9 @@ export const CodeAgentView: React.FC = () => {
                         </div>
                     </div>
                     <div className={`px-6 py-2 rounded-xl border-2 border-black font-black text-xs tracking-widest transition-all duration-700 ${
-                        status === 'SCOURING' || status === 'CRAWLING_ROBOTS' ? 'bg-cyan-900/40 text-cyan-400 wisdom-border' : 'bg-red-900/40 text-red-400 wisdom-border shadow-[0_0_15px_rgba(239,68,68,0.2)]'
+                        status === 'SCOURING' || status === 'CRAWLING_ROBOTS' ? 'bg-cyan-900/40 text-cyan-400 wisdom-border' : (status === 'HEURISTIC_REPAIR' ? 'bg-amber-900/40 text-amber-400 wisdom-border' : 'bg-red-900/40 text-red-400 wisdom-border shadow-[0_0_15px_rgba(239,68,68,0.2)]')
                     }`}>
-                        {status}
+                        {status === 'HEURISTIC_REPAIR' ? 'HEURISTIC REPAIR' : status}
                     </div>
                 </div>
             </div>
@@ -153,11 +200,31 @@ export const CodeAgentView: React.FC = () => {
                                      isRobots ? <span className="text-amber-400 font-bold underline">{log}</span> :
                                      isDeobfuscate ? <span className="text-purple-400 italic">{log}</span> :
                                      isSuccess ? <span className="text-green-400 font-bold">{log}</span> :
-                                     <span className="text-gray-500 opacity-80">{log}</span>}
+                                     <span className="text-gray-500 opacity-80" dangerouslySetInnerHTML={{ __html: log }} />
+                                    }
                                 </div>
                             );
                         })}
                         <div ref={logEndRef} />
+                        {isHeuristicRepairActive && (
+                            <div className="aero-panel bg-black/80 border-2 border-amber-500/30 p-4 mt-6 animate-in fade-in slide-in-from-bottom-4">
+                                <div className="flex items-center gap-2 text-amber-500 font-bold text-xs uppercase tracking-widest mb-3">
+                                    <BotIcon className="w-4 h-4" /> Heuristic Repair Console
+                                </div>
+                                <div className="space-y-1 text-xs font-mono text-amber-400 max-h-40 overflow-y-auto custom-scrollbar">
+                                    {heuristicRepairLogs.map((hlog, i) => (
+                                        <div key={i} className="animate-in slide-in-from-left-2" dangerouslySetInnerHTML={{ __html: hlog }} />
+                                    ))}
+                                    {heuristicRepairLogs.length < HEURISTIC_REPAIR_STEPS.length && (
+                                        <div className="flex items-center gap-2 mt-2 italic text-gray-700 animate-pulse">
+                                            <SpinnerIcon className="w-3 h-3" />
+                                            <span>Synthesizing...</span>
+                                        </div>
+                                    )}
+                                    <div ref={heuristicLogEndRef} />
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
 
@@ -210,14 +277,14 @@ export const CodeAgentView: React.FC = () => {
                         </div>
                         <button 
                             onClick={triggerRobotsScour}
-                            disabled={status === 'CRAWLING_ROBOTS' || status === 'SCOURING'}
+                            disabled={status === 'CRAWLING_ROBOTS' || status === 'SCOURING' || isHeuristicRepairActive}
                             className="vista-button w-full bg-amber-700 hover:bg-amber-600 text-white py-4 text-xs font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(245,158,11,0.3)] disabled:bg-gray-800 transition-all rounded-2xl border-amber-500/30"
                         >
                             <FileIcon className="w-5 h-5 text-amber-300" /> SCOUR ROBOTS.TXT
                         </button>
                         <button 
                             onClick={triggerGlobalScour}
-                            disabled={status === 'SCOURING' || status === 'CRAWLING_ROBOTS'}
+                            disabled={status === 'SCOURING' || status === 'CRAWLING_ROBOTS' || isHeuristicRepairActive}
                             className="vista-button w-full bg-cyan-700 hover:bg-cyan-600 text-white py-4 text-xs font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(6,182,212,0.3)] disabled:bg-gray-800 transition-all rounded-2xl border-cyan-500/30"
                         >
                             <SearchIcon className="w-5 h-5 text-cyan-300" /> GLOBAL SEARCH SCOUR

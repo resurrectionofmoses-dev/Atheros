@@ -1,16 +1,98 @@
 
-import React, { useState, useEffect, useRef } from 'react';
-import { SignalIcon, ZapIcon, ShieldIcon, TerminalIcon, SpinnerIcon, SearchIcon, CodeIcon, ActivityIcon, FireIcon, BrainIcon, BookOpenIcon, LogicIcon } from './icons';
-import { generateBluetoothBlueprint } from '../services/geminiService';
-import type { BluetoothProtocol, BluetoothBlueprint } from '../types';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { SignalIcon, ZapIcon, ShieldIcon, TerminalIcon, SpinnerIcon, SearchIcon, CodeIcon, ActivityIcon, FireIcon, BrainIcon, BookOpenIcon, LogicIcon, WarningIcon, CheckCircleIcon } from './icons';
+import { generateBluetoothBlueprint, adaptBluetoothProtocol } from '../services/geminiService';
+import type { BluetoothProtocol, BluetoothBlueprint, ProtocolAdaptation } from '../types';
 
 const PROTOCOLS: BluetoothProtocol[] = [
-    { id: 'p1', name: 'Core Spec 5.4', category: 'Core', description: 'The absolute foundation. Periodic Advertising with Responses (PAwR) and Encrypted Advertising Data.', commonUUIDs: ['0x1800', '0x1801'], designConstraints: ['Latency < 10ms', 'Encryption Mandatory'] },
-    { id: 'p2', name: 'LE Audio / Auracast', category: 'Auracast', description: 'Next-gen audio sharing. LC3 Codec, Broadcast Audio, and Multi-stream support.', commonUUIDs: ['0x184B', '0x184E'], designConstraints: ['LC3 Compliance', 'QoS Synchronization'] },
-    { id: 'p3', name: 'GATT Battery Service', category: 'GATT', description: 'Universal status reporting for node longevity.', commonUUIDs: ['0x180F'], designConstraints: ['Read-only', 'Low frequency updates'] },
-    { id: 'p4', name: 'Bluetooth Mesh 1.1', category: 'Mesh', description: 'Massive scale node orchestration. Directed Forwarding and Remote Provisioning.', commonUUIDs: ['0xA001'], designConstraints: ['Relay support', 'Sequence numbering'] },
-    { id: 'p5', name: 'HID over GATT (HoG)', category: 'GATT', description: 'Low-latency human interface conduit.', commonUUIDs: ['0x1812'], designConstraints: ['Critical timing', 'Report maps'] },
+    { id: 'p1', name: 'Core Spec 5.4', category: 'Core', description: 'The absolute foundation. Periodic Advertising with Responses (PAwR) and Encrypted Advertising Data.', commonUUIDs: ['0x1800 (Generic Access)', '0x1801 (Generic Attribute)'], designConstraints: ['Latency < 10ms', 'Encryption Mandatory'] },
+    { id: 'p2', name: 'LE Audio / Auracast', category: 'Auracast', description: 'Next-gen audio sharing. LC3 Codec, Broadcast Audio, and Multi-stream support.', commonUUIDs: ['0x184B (Basic Audio)', '0x184E (Published Audio Capabilities)'], designConstraints: ['LC3 Compliance', 'QoS Synchronization'] },
+    { id: 'p3', name: 'GATT Battery Service', category: 'GATT', description: 'Universal status reporting for node longevity.', commonUUIDs: ['0x180F (Battery Service)', '0x2A19 (Battery Level Characteristic)'], designConstraints: ['Read-only', 'Low frequency updates'] },
+    { id: 'p4', name: 'Bluetooth Mesh 1.1', category: 'Mesh', description: 'Massive scale node orchestration. Directed Forwarding and Remote Provisioning.', commonUUIDs: ['0xA001 (Mesh Provisioning)', '0xA002 (Mesh Proxy)'], designConstraints: ['Relay support', 'Sequence numbering'] },
+    { id: 'p5', name: 'HID over GATT (HoG)', category: 'GATT', description: 'Low-latency human interface conduit.', commonUUIDs: ['0x1812 (Human Interface Device)', '0x2A4A (Report Map Characteristic)'], designConstraints: ['Critical timing', 'Report maps'] },
 ];
+
+interface BluetoothService {
+    uuid: string;
+    name: string;
+    description: string;
+    characteristics: BluetoothCharacteristic[];
+}
+
+interface BluetoothCharacteristic {
+    uuid: string;
+    name: string;
+    properties: string[]; // e.g., ['Read', 'Write', 'Notify']
+    description: string;
+}
+
+const getMockServicesAndCharacteristics = (protocolId: string): BluetoothService[] => {
+    switch (protocolId) {
+        case 'p1': // Core Spec 5.4
+            return [
+                {
+                    uuid: '0x1800',
+                    name: 'Generic Access Profile (GAP)',
+                    description: 'Defines how devices interact with each other for discovery and connection.',
+                    characteristics: [
+                        { uuid: '0x2A00', name: 'Device Name', properties: ['Read'], description: 'The user-friendly name of the device.' },
+                        { uuid: '0x2A01', name: 'Appearance', properties: ['Read'], description: 'Defines the external appearance of the device (e.g., phone, watch).' },
+                    ],
+                },
+            ];
+        case 'p2': // LE Audio / Auracast
+            return [
+                {
+                    uuid: '0x184B',
+                    name: 'Basic Audio Profile',
+                    description: 'Provides standardized behavior for LE Audio devices.',
+                    characteristics: [
+                        { uuid: '0x2BDE', name: 'Audio Stream Control', properties: ['Write', 'Notify'], description: 'Control and status of audio streams.' },
+                        { uuid: '0x2BDF', name: 'Codec Configuration', properties: ['Read', 'Write'], description: 'Parameters for audio codec (e.g., LC3).' },
+                    ],
+                },
+            ];
+        case 'p3': // GATT Battery Service
+            return [
+                {
+                    uuid: '0x180F',
+                    name: 'Battery Service',
+                    description: 'Exposes the battery level status of a device.',
+                    characteristics: [
+                        { uuid: '0x2A19', name: 'Battery Level', properties: ['Read', 'Notify'], description: 'The current battery level percentage.' },
+                        { uuid: '0x2A1B', name: 'Battery Status', properties: ['Read'], description: 'Charging status of the battery.' },
+                    ],
+                },
+            ];
+        case 'p4': // Bluetooth Mesh 1.1
+            return [
+                {
+                    uuid: '0x1827',
+                    name: 'Mesh Provisioning Service',
+                    description: 'Used during the provisioning process to add a device to a Mesh network.',
+                    characteristics: [
+                        { uuid: '0x2ADB', name: 'Provisioning Data In', properties: ['Write'], description: 'Provisioning PDU sent by the Provisioner.' },
+                        { uuid: '0x2ADC', name: 'Provisioning Data Out', properties: ['Notify'], description: 'Provisioning PDU received by the Provisioner.' },
+                    ],
+                },
+            ];
+        case 'p5': // HID over GATT (HoG)
+            return [
+                {
+                    uuid: '0x1812',
+                    name: 'Human Interface Device Service',
+                    description: 'Enables a GATT client to interact with an HID host.',
+                    characteristics: [
+                        { uuid: '0x2A4A', name: 'Report Map', properties: ['Read'], description: 'Defines the format and capability of HID reports.' },
+                        { uuid: '0x2A4D', name: 'HID Control Point', properties: ['Write'], description: 'Used to control the HID host (e.g., suspend).' },
+                    ],
+                },
+            ];
+        default:
+            return [];
+    }
+};
+
 
 export const BluetoothSpecBridge: React.FC = () => {
     const [selectedProtocol, setSelectedProtocol] = useState<BluetoothProtocol>(PROTOCOLS[0]);
@@ -19,8 +101,16 @@ export const BluetoothSpecBridge: React.FC = () => {
     const [isGenerating, setIsGenerating] = useState(false);
     const [logs, setLogs] = useState<string[]>(["[SIG_BRIDGE] Initialized.", "[READY] Spectum scanners calibrated."]);
     const [spectrumPulse, setSpectrumPulse] = useState(0);
+    const [isSimulatingDrift, setIsSimulatingDrift] = useState(false);
+    const [currentDrift, setCurrentDrift] = useState(0); // Simulated drift value
+    const [interference, setInterference] = useState(0); // Simulated interference
+    const [isAdapting, setIsAdapting] = useState(false);
+    const [adaptationResult, setAdaptationResult] = useState<ProtocolAdaptation | null>(null);
 
+    // Fix: Corrected typo from HTMLHTMLDivElement to HTMLDivElement
     const logEndRef = useRef<HTMLDivElement>(null);
+
+    const simulatedServices = useMemo(() => getMockServicesAndCharacteristics(selectedProtocol.id), [selectedProtocol]);
 
     useEffect(() => {
         const interval = setInterval(() => {
@@ -29,23 +119,61 @@ export const BluetoothSpecBridge: React.FC = () => {
         return () => clearInterval(interval);
     }, []);
 
-    const addLog = (msg: string) => {
-        setLogs(prev => [`[${new Date().toLocaleTimeString()}] ${msg}`, ...prev].slice(0, 15));
+    useEffect(() => {
+        let driftInterval: number;
+        if (isSimulatingDrift) {
+            addLog("[DRIFT_SIM] Initiating simulated network drift...", 'orange');
+            driftInterval = setInterval(() => {
+                setCurrentDrift(d => Math.min(100, d + Math.random() * 5));
+                setInterference(i => Math.min(100, i + Math.random() * 3));
+            }, 500);
+        } else {
+            addLog("[DRIFT_SIM] Drift simulation halted.", 'green');
+            setCurrentDrift(0);
+            setInterference(0);
+        }
+        return () => clearInterval(driftInterval);
+    }, [isSimulatingDrift]);
+
+    const addLog = (msg: string, color: string = 'text-gray-600 italic opacity-80') => {
+        setLogs(prev => [`[${new Date().toLocaleTimeString()}] <span style="color:${color};">${msg}</span>`, ...prev].slice(0, 15));
     };
 
     const handleDesign = async () => {
         if (!designRequirements.trim() || isGenerating) return;
         setIsGenerating(true);
-        addLog(`Consulting SIG Standards for ${selectedProtocol.name}...`);
+        addLog(`Consulting SIG Standards for ${selectedProtocol.name}...`, 'text-blue-400');
         
         const result = await generateBluetoothBlueprint(selectedProtocol.name, designRequirements);
         if (result) {
             setBlueprint(result);
-            addLog("Gifted Blueprint synthesized. Protocol integrity: 99.8%");
+            addLog("Gifted Blueprint synthesized. Protocol integrity: 99.8%", 'text-green-400');
         } else {
-            addLog("Error: Conjunction bridge failed. The spectrum is too noisy.");
+            addLog("Error: Conjunction bridge failed. The spectrum is too noisy.", 'text-red-600');
         }
         setIsGenerating(false);
+    };
+
+    const handleAdaptProtocol = async () => {
+        if (!blueprint || isAdapting || (!isSimulatingDrift && currentDrift < 10 && interference < 10)) return; // Only adapt if drift is significant or simulation is on
+        setIsAdapting(true);
+        setAdaptationResult(null);
+        addLog(`[ADAPTING_PROTOCOL] Maestro initiating dynamic adaptation for ${blueprint.protocol}...`, 'cyan');
+
+        const networkConditions = { simulatedDrift: currentDrift, interferenceLevel: interference };
+        const result = await adaptBluetoothProtocol(blueprint, networkConditions);
+
+        if (result) {
+            setAdaptationResult(result);
+            addLog(`[SUCCESS] Protocol adapted. Predicted stability: ${result.predictedStability.toFixed(1)}%`, 'lime');
+            // Simulate updating the blueprint somewhat (e.g., packet structure)
+            if (result.revisedPacketStructure) {
+                setBlueprint(prev => prev ? { ...prev, packetStructure: result.revisedPacketStructure } : null);
+            }
+        } else {
+            addLog(`[ERROR] Protocol adaptation failed for ${blueprint.protocol}.`, 'red');
+        }
+        setIsAdapting(false);
     };
 
     return (
@@ -173,6 +301,15 @@ export const BluetoothSpecBridge: React.FC = () => {
                                                         <p className="text-xs font-mono text-blue-400 truncate">{blueprint.integritySignature}</p>
                                                     </div>
                                                 </div>
+                                                {adaptationResult && (
+                                                    <div className="p-4 bg-lime-900/20 border-2 border-lime-500/30 rounded-xl animate-in zoom-in-95">
+                                                        <p className="text-[9px] text-lime-400 font-black uppercase tracking-widest mb-2 flex items-center gap-2"><CheckCircleIcon className="w-3 h-3"/> ADAPTATION SUCCESS</p>
+                                                        <ul className="list-disc list-inside text-[10px] text-lime-300">
+                                                            {adaptationResult.adaptationDirectives.map((dir, i) => <li key={i}>{dir}</li>)}
+                                                        </ul>
+                                                        <p className="text-[9px] text-gray-500 mt-2">Predicted Stability: <span className="text-lime-400">{adaptationResult.predictedStability.toFixed(1)}%</span></p>
+                                                    </div>
+                                                )}
                                             </div>
                                         ) : (
                                             <div className="h-full flex flex-col items-center justify-center opacity-10">
@@ -187,7 +324,7 @@ export const BluetoothSpecBridge: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Right side: Real-time Comms Logs */}
+                {/* Right side: Real-time Comms Logs and Adaptation Controls */}
                 <div className="lg:w-96 flex flex-col gap-6">
                     <div className="aero-panel bg-black/90 border-4 border-black flex flex-col overflow-hidden h-[450px] shadow-[10px_10px_0_0_#000]">
                         <div className="p-5 border-b-4 border-black flex items-center justify-between bg-white/5">
@@ -199,10 +336,7 @@ export const BluetoothSpecBridge: React.FC = () => {
                         </div>
                         <div className="flex-1 p-6 overflow-y-auto font-mono text-[11px] space-y-3 custom-scrollbar bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]">
                             {logs.map((log, i) => (
-                                <div key={i} className={`flex gap-4 pb-2 border-b border-white/5 last:border-0 ${log.includes('Blueprint') ? 'text-green-400 font-black' : 'text-gray-600 italic opacity-80'}`}>
-                                    <span className="opacity-30">[{i.toString().padStart(2, '0')}]</span>
-                                    <span className="leading-tight">{log}</span>
-                                </div>
+                                <div key={i} className={`flex gap-4 pb-2 border-b border-white/5 last:border-0 animate-in slide-in-from-left-2`} dangerouslySetInnerHTML={{ __html: log }} />
                             ))}
                             <div ref={logEndRef} />
                         </div>
@@ -221,9 +355,55 @@ export const BluetoothSpecBridge: React.FC = () => {
                                 </p>
                             </div>
                          </div>
+                         <div className="mt-8 pt-8 border-t-2 border-black/50">
+                            <h5 className="text-[10px] font-black text-gray-500 uppercase mb-4 flex items-center gap-2">
+                                <CodeIcon className="w-3.5 h-3.5" /> Adaptation Protocol
+                            </h5>
+                            <div className="flex items-center justify-between p-3 bg-black/40 border border-white/5 rounded-xl">
+                                <label className="text-[9px] text-gray-400 font-black uppercase">Simulate Drift</label>
+                                <input type="checkbox" checked={isSimulatingDrift} onChange={() => setIsSimulatingDrift(p => !p)} className="w-4 h-4 accent-red-500" />
+                            </div>
+                            {isSimulatingDrift && (
+                                <div className="mt-3 space-y-2 animate-in fade-in slide-in-from-top-2">
+                                    <div className="flex justify-between text-[8px] text-red-500 font-black uppercase">
+                                        <span>Current Drift:</span>
+                                        <span>{currentDrift.toFixed(0)}%</span>
+                                    </div>
+                                    <div className="h-1.5 bg-gray-900 rounded-full overflow-hidden">
+                                        <div className="h-full bg-red-500" style={{ width: `${currentDrift}%` }} />
+                                    </div>
+                                    <div className="flex justify-between text-[8px] text-red-500 font-black uppercase">
+                                        <span>Interference:</span>
+                                        <span>{interference.toFixed(0)}%</span>
+                                    </div>
+                                    <div className="h-1.5 bg-gray-900 rounded-full overflow-hidden">
+                                        <div className="h-full bg-orange-500" style={{ width: `${interference}%` }} />
+                                    </div>
+                                </div>
+                            )}
+                            {(currentDrift > 20 || interference > 20) && !isAdapting && blueprint && (
+                                <button
+                                    onClick={handleAdaptProtocol}
+                                    className="vista-button w-full mt-4 py-3 bg-red-600 hover:bg-red-500 text-white font-black uppercase text-[10px] rounded-2xl flex items-center justify-center gap-2 animate-pulse shadow-[4px_4px_0_0_#000]"
+                                >
+                                    <WarningIcon className="w-4 h-4" /> RECONCILE DRIFT
+                                </button>
+                            )}
+                            {isAdapting && (
+                                <div className="w-full mt-4 py-3 bg-blue-950/20 text-blue-400 font-black uppercase text-[10px] rounded-2xl flex items-center justify-center gap-2 animate-pulse">
+                                    <SpinnerIcon className="w-4 h-4" /> ADAPTING PROTOCOL...
+                                </div>
+                            )}
+                         </div>
                     </div>
                 </div>
             </div>
         </div>
     );
 };
+
+const LockIcon: React.FC<{ className?: string }> = ({ className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <rect width="18" height="11" x="3" y="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
+    </svg>
+);

@@ -1,13 +1,7 @@
+
 export const BINARY_EXTENSIONS = [
-  // Windows
   '.dll', '.exe', '.com', '.msi', '.sys', '.scr',
-  // Linux
-  '.so', '.bin', '.out',
-  // macOS
-  '.dylib',
-  // Cross-platform
-  '.jar', '.pyd',
-  // Archives
+  '.so', '.bin', '.out', '.dylib', '.jar', '.pyd',
   '.zip', '.rar', '.7z', '.tar', '.gz', '.tgz', '.iso',
 ];
 
@@ -16,10 +10,28 @@ export const isBinaryFile = (fileName: string): boolean => {
 };
 
 export const extractVersionFromFile = (fileName:string): string | null => {
-    // Regex to find common version number patterns (e.g., v1.2.3, 2.3.4, 10.0, ver-1.2)
     const versionRegex = /(?:v|ver|version)?[_-]?(\d+\.\d+(?:\.\d+){0,2})/i;
     const match = fileName.match(versionRegex);
     return match ? match[1] : null;
+};
+
+export const getDeviceCompat = (): any => {
+  const ua = navigator.userAgent;
+  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
+  const isTablet = /(ipad|tablet|(android(?!.*mobile))|(windows(?!.*phone)(.*touch))|kindle|playbook|silk|(puffin(?!.*(IP|AP|WP))))/i.test(ua);
+  
+  return {
+    platform: navigator.platform,
+    isMobile: isMobile && !isTablet,
+    isTablet: isTablet,
+    isDesktop: !isMobile && !isTablet,
+    touchEnabled: 'ontouchstart' in window || navigator.maxTouchPoints > 0,
+    screenRes: `${window.screen.width}x${window.screen.height}`,
+    pwaSupport: 'serviceWorker' in navigator,
+    batteryApi: 'getBattery' in navigator,
+    bluetoothApi: 'bluetooth' in navigator,
+    canEscalate: isMobile || /Linux/i.test(ua)
+  };
 };
 
 export interface SophisticatedColor {
@@ -50,9 +62,6 @@ export const getSophisticatedColor = (seed: string): SophisticatedColor => {
   return COLOR_PALETTE[index];
 };
 
-/**
- * Executes an async function with exponential backoff on 429 (Quota) errors.
- */
 export async function callWithRetry<T>(
   fn: () => Promise<T>,
   maxRetries: number = 3,
@@ -67,7 +76,7 @@ export async function callWithRetry<T>(
       if (isQuotaError && retries < maxRetries) {
         retries++;
         const delay = initialDelay * Math.pow(2, retries - 1);
-        console.warn(`Quota exceeded. Retrying in ${delay}ms (Attempt ${retries}/${maxRetries})...`);
+        console.warn(`Quota exceeded. Retrying in ${delay}ms...`);
         await new Promise(resolve => setTimeout(resolve, delay));
         continue;
       }

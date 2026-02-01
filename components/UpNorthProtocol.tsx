@@ -1,13 +1,16 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { GoogleGenAI, Type } from "@google/genai";
 import { SpinnerIcon, WarningIcon, CheckCircleIcon, TerminalIcon, ZapIcon, FireIcon, ShieldIcon, ActivityIcon as TelemetryIcon, BookOpenIcon, LogicIcon, SearchIcon, ShareIcon } from './icons';
-import type { ShadowInfoCard, AuditReport, TelemetryState } from '../types';
+import type { ShadowInfoCard, AuditReport, TelemetryState, MainView } from '../types';
 import { callWithRetry } from '../utils';
+// Fix: Import MAESTRO_SYSTEM_PROMPT from geminiService
+import { MAESTRO_SYSTEM_PROMPT } from '../services/geminiService';
 
-// Removed redundant AIStudio interface and global window augmentation as it is pre-configured in the platform environment.
+interface UpNorthProtocolProps {
+  onSetView?: (view: MainView) => void;
+}
 
-export const UpNorthProtocol: React.FC = () => {
+export const UpNorthProtocol: React.FC<UpNorthProtocolProps> = ({ onSetView }) => {
   const [step, setStep] = useState(1);
   const [taskInput, setTaskInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -40,7 +43,7 @@ export const UpNorthProtocol: React.FC = () => {
     setIsLoading(true);
     setError(null);
 
-    // Create a new GoogleGenAI instance right before making an API call to ensure it always uses the most up-to-date API key
+    // Fix: Initialize GoogleGenAI right before the API call to ensure the latest API key is used.
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
     try {
@@ -54,23 +57,8 @@ export const UpNorthProtocol: React.FC = () => {
           model: 'gemini-3-pro-preview',
           contents,
           config: {
-            responseMimeType: "application/json",
-            responseSchema: {
-              type: Type.OBJECT,
-              properties: {
-                signature: { type: Type.STRING },
-                flowRole: { type: Type.STRING },
-                dependency: { type: Type.STRING },
-                boundaries: {
-                  type: Type.OBJECT,
-                  properties: {
-                    havLimit: { type: Type.NUMBER },
-                    noiseLimit: { type: Type.NUMBER }
-                  }
-                },
-                logicBlueprint: { type: Type.STRING }
-              }
-            }
+            systemInstruction: MAESTRO_SYSTEM_PROMPT,
+            temperature: 0.9,
           }
         });
       });
@@ -137,7 +125,7 @@ export const UpNorthProtocol: React.FC = () => {
     if (!audit) return;
     setIsLoading(true);
     setError(null);
-    // Create a new GoogleGenAI instance right before making an API call
+    // Fix: Initialize GoogleGenAI right before the API call to ensure the latest API key is used.
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     
     try {
@@ -200,9 +188,7 @@ export const UpNorthProtocol: React.FC = () => {
 
   const handleOpenKeyDialog = async () => {
     try {
-      // Access pre-configured aistudio from window using type casting to avoid declaration conflicts.
       await (window as any).aistudio.openSelectKey();
-      // Assume the key selection was successful as per instructions
       setError(null);
     } catch (err) {
       console.error("Failed to open key dialog", err);
@@ -241,7 +227,7 @@ export const UpNorthProtocol: React.FC = () => {
                     </div>
                 </div>
                 <p className="text-sm text-red-100 leading-relaxed mb-8 border-l-2 border-red-500/50 pl-4 italic">
-                    {error.message} The current intelligence stream is saturated. You must wait for the cycle to reset or connect a different project with higher throughput.
+                    {error.message} The current intelligence stream is saturated. You must wait for the cycle to reset or consult the Maestro's Network Covenant for treasury management rules.
                 </p>
                 <div className="flex gap-4">
                     <button 
@@ -257,9 +243,16 @@ export const UpNorthProtocol: React.FC = () => {
                         Switch Intelligence Project
                     </button>
                 </div>
-                <p className="text-[9px] text-red-300/40 text-center mt-6 uppercase font-black">
-                    Billing docs: <a href="https://ai.google.dev/gemini-api/docs/billing" target="_blank" className="underline text-red-400">ai.google.dev/gemini-api/docs/billing</a>
-                </p>
+                {onSetView && (
+                    <div className="mt-8 text-center border-t border-red-900/30 pt-6">
+                        <button 
+                            onClick={() => onSetView('covenant')}
+                            className="text-[10px] text-amber-500 hover:text-amber-400 font-black uppercase tracking-[0.2em] underline"
+                        >
+                            Read Maestro's Network Covenant
+                        </button>
+                    </div>
+                )}
             </div>
         )}
 
@@ -487,7 +480,7 @@ export const UpNorthProtocol: React.FC = () => {
 
                 <div className="space-y-10 mt-8 relative z-10">
                     <div className="bg-black/90 border-4 border-black p-8 rounded-3xl shadow-2xl">
-                        <h5 className="text-[10px] text-gray-600 font-black uppercase mb-6 tracking-[0.4em] flex items-center gap-3">
+                        <h5 className="text-[10px] text-gray-600 font-black uppercase mb-6 tracking-widest flex items-center gap-3">
                           <TerminalIcon className={`w-5 h-5 ${recursiveResult.isSurvivalActivated ? 'text-amber-500' : 'text-cyan-500'}`} /> 
                           REASONING_CHAIN_GIFTED
                         </h5>

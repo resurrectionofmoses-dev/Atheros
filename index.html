@@ -35,6 +35,7 @@
     --wisdom-gold: #fbbf24;
     --insight-sapphire: #3b82f6;
     --maestro-ruby: #ef4444;
+    --rasta-green: #22c55e;
     --aero-glass: rgba(10, 15, 30, 0.6);
     --glass-border: rgba(255, 255, 255, 0.1);
     --conjunction-crimson: #991b1b;
@@ -78,6 +79,22 @@
     overflow: hidden;
   }
 
+  .rasta-border {
+    border-width: 4px;
+    border-style: solid;
+    border-image: linear-gradient(to right, #ef4444, #fbbf24, #22c55e) 1;
+  }
+
+  .rasta-vibe {
+    animation: rasta-pulse 4s infinite alternate;
+  }
+
+  @keyframes rasta-pulse {
+    0% { border-color: #ef4444; box-shadow: 0 0 10px #ef4444; }
+    50% { border-color: #fbbf24; box-shadow: 0 0 10px #fbbf24; }
+    100% { border-color: #22c55e; box-shadow: 0 0 10px #22c55e; }
+  }
+
   .wisdom-glow {
     text-shadow: 0 0 15px var(--maestro-ruby), 0 0 30px rgba(239, 68, 68, 0.5);
   }
@@ -108,19 +125,15 @@
     <div id="root"></div>
     <script type="module" src="index.tsx"></script>
     <script>
-      // Enhanced Service Worker registration to handle origin constraints in restricted environments
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
           try {
             const swPath = './sw.js';
-            // Determine if the environment supports Service Workers and handles paths correctly
-            // Using absolute relative path to ensure the scope is correctly identified as same-origin
             navigator.serviceWorker.register(swPath, { scope: './' })
               .then(reg => {
                 console.log('Maestro Service Worker Active | Conjunction Domain:', reg.scope);
               })
               .catch(err => {
-                // Gracefully log environmental constraints without breaking the core app
                 console.warn('Conjunction Bridge: Service Worker Restricted by Environment.', err.message);
               });
           } catch (e) {

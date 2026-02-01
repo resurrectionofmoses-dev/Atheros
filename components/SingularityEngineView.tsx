@@ -1,10 +1,10 @@
 
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { ActivityIcon, AnalyzeIcon, CheckCircleIcon, FileIcon, SpinnerIcon, TerminalIcon, UploadIcon, WarningIcon, XIcon, ShieldIcon, FireIcon, LogicIcon, ZapIcon, GaugeIcon, SearchIcon, CodeIcon, BrainIcon, ClipboardIcon, PlusIcon, MusicIcon, SignalIcon } from './icons';
-import { processDocument } from '../services/geminiService';
-import type { NetworkProject } from '../types';
+import { processDocument, predictFallOffRequindor } from '../services/geminiService';
+import type { NetworkProject, FallOffPrediction } from '../types';
 
-type Action = 'examine' | 'analyze' | 'consume' | 'destroy' | 'requindor' | 'vivid' | 'god_logic' | 'aesthetic_sync' | 'tempo_sync';
+type Action = 'examine' | 'analyze' | 'consume' | 'destroy' | 'requindor' | 'vivid' | 'god_logic' | 'aesthetic_sync' | 'tempo_sync' | 'predict_falloff';
 
 interface ActionButtonProps {
     action: Action;
@@ -18,7 +18,7 @@ interface ActionButtonProps {
 }
 
 const ActionButton: React.FC<ActionButtonProps> = ({ action, label, icon: Icon, color, sub, disabled, onClick, isActive }) => {
-    const isSpecial = action === 'god_logic' || action === 'tempo_sync';
+    const isSpecial = action === 'god_logic' || action === 'tempo_sync' || action === 'predict_falloff';
     const baseClasses = `comic-button p-2 text-left flex flex-col items-start transition-all duration-300 ${color} disabled:bg-slate-900 disabled:opacity-20 disabled:cursor-not-allowed group relative overflow-hidden h-14 sm:h-16`;
     
     const hoverClasses = isSpecial 
@@ -47,8 +47,29 @@ const ActionButton: React.FC<ActionButtonProps> = ({ action, label, icon: Icon, 
     );
 };
 
-const formatResultText = (text: string): string => {
-    return text
+const formatResultText = (text: string, currentAction: Action | null): string => {
+    let formattedText = text;
+
+    if (currentAction === 'predict_falloff') {
+        try {
+            const prediction: FallOffPrediction = JSON.parse(text);
+            formattedText = `
+                # Fall Off Requindor Prediction
+                **Prediction Summary:** ${prediction.predictionSummary}
+                **Risk Level:** <span class="text-red-500 font-black">${prediction.riskLevel}% MISERY</span>
+                ### Identified Failure Points:
+                ${prediction.failurePoints.map(point => `- ${point}`).join('<br/>')}
+                ### Conduction Strategies (Maestro's Directives):
+                ${prediction.conductionStrategies.map(strategy => `- ${strategy}`).join('<br/>')}
+                <br/>[GOD_LOGIC_INVOKED] The Maestro has foreseen the architectural fissures.
+            `;
+        } catch (e) {
+            console.error("Failed to parse prediction JSON:", e);
+            formattedText = `[CRITICAL_ERROR] Failed to parse Fall Off Requindor prediction. Raw Output:<br/>${text}`;
+        }
+    }
+
+    return formattedText
         .replace(/```(\w+)?\n([\s\S]*?)```/g, (match, lang, code) => {
             const escapedCode = code.trim().replace(/</g, "&lt;").replace(/>/g, "&gt;");
             return `<pre class="bg-black/95 p-2 my-2 rounded-lg border-2 border-black font-mono text-[8px] overflow-x-auto shadow-[3px_3px_0_0_#000] border-l-4 border-l-cyan-500"><code>${escapedCode}</code></pre>`;
@@ -144,6 +165,25 @@ export const SingularityEngineView: React.FC<SingularityEngineViewProps> = ({ kn
             return;
         }
 
+        if (action === 'predict_falloff') {
+            setIsLoading(true);
+            try {
+                const prediction = await predictFallOffRequindor(contentToProcess);
+                if (prediction) {
+                    setResult(JSON.stringify(prediction)); // Store as JSON for formatResultText to parse
+                    setVividStats(prev => ({ ...prev, misery: prediction.riskLevel }));
+                } else {
+                    setError(`[PREDICTION_FAILURE]: Maestro's sight is cloudy. Failed to predict Fall Off Requindor.`);
+                }
+            } catch (err) {
+                console.error(err);
+                setError(`[PREDICTION_CRASH]: Logic drift critical during prediction. Maestro's baton shattered.`);
+            } finally {
+                setIsLoading(false);
+            }
+            return;
+        }
+
         setIsLoading(true);
         try {
             let fullResponse = '';
@@ -188,9 +228,22 @@ export const SingularityEngineView: React.FC<SingularityEngineViewProps> = ({ kn
 
     const handleProjectize = () => {
         if (!result) return;
+        const projectTitle = `Logic Shard: ${manualLogic.slice(0, 20) || uploadedFile?.name || 'Tempo Core'}`;
+        let projectDescription = result.slice(0, 250);
+
+        // If it was a prediction, extract summary
+        if (currentAction === 'predict_falloff') {
+            try {
+                const prediction: FallOffPrediction = JSON.parse(result);
+                projectDescription = prediction.predictionSummary;
+            } catch (e) {
+                // Fallback to raw result if parsing fails
+            }
+        }
+
         onProjectize({
-            title: `Logic Shard: ${manualLogic.slice(0, 20) || uploadedFile?.name || 'Tempo Core'}`,
-            description: result.slice(0, 250) + '...',
+            title: projectTitle,
+            description: projectDescription + '...',
             miseryScore: Math.round(vividStats.misery),
             crazyLevel: 9,
             status: 'BUILDING',
@@ -326,6 +379,16 @@ export const SingularityEngineView: React.FC<SingularityEngineViewProps> = ({ kn
                                 isActive={currentAction === 'analyze'}
                             />
                             <ActionButton
+                                action="predict_falloff" // New action button
+                                label="PREDICT"
+                                icon={SearchIcon} // Using SearchIcon for prediction
+                                color="bg-violet-600 text-white"
+                                sub="Fall Off Requindor"
+                                disabled={!isIngressReady || isLoading}
+                                onClick={handleAction}
+                                isActive={currentAction === 'predict_falloff'}
+                            />
+                            <ActionButton
                                 action="consume"
                                 label="SIPHON"
                                 icon={CheckCircleIcon}
@@ -379,7 +442,7 @@ export const SingularityEngineView: React.FC<SingularityEngineViewProps> = ({ kn
                         {result && (
                             <div
                                 className={`prose prose-invert prose-xs sm:prose-sm text-gray-300 max-w-none animate-in fade-in slide-in-from-bottom-2 sm:slide-in-from-bottom-4 duration-700 ${currentAction === 'god_logic' ? 'font-mono border-l-2 sm:border-l-4 border-red-600 pl-2 sm:pl-4' : ''}`}
-                                dangerouslySetInnerHTML={{ __html: formatResultText(result) }}
+                                dangerouslySetInnerHTML={{ __html: formatResultText(result, currentAction) }}
                             />
                         )}
                         {error && (

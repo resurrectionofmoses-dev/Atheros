@@ -1,4 +1,3 @@
-
 export * from './SpeakerIcon';
 export * from './SpeakerOffIcon';
 export * from './UserIcon';
@@ -55,3 +54,12 @@ export * from './LogicIcon';
 export * from './GaugeIcon';
 export * from './BrainIcon';
 export * from './StarIcon';
+// Fix: Export RulesIcon to resolve import errors in Sidebar and NetworkCovenant
+export * from './RulesIcon';
+// Fix: Export other provided icons that were missing from the barrel file
+export * from './DebugIcon';
+export * from './FocusIcon';
+export * from './GitBranchIcon';
+export * from './VaultIcon';
+export * from './DoveIcon';
+export * from './HomeIcon';

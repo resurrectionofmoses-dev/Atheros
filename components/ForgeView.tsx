@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import type { ProjectBlueprint, BlueprintStatus, BlueprintPriority } from '../types';
 import { BookOpenIcon, ForgeIcon, HammerIcon, SpinnerIcon, XIcon } from './icons';
 import { queryKnowledgeCore } from '../services/geminiService';
@@ -16,6 +16,14 @@ const priorityMap: Record<BlueprintPriority, { color: string, label: string }> =
     'Medium': { color: 'bg-sky-500', label: 'Medium' },
     'High': { color: 'bg-yellow-500', label: 'High' },
     'Critical': { color: 'bg-red-500', label: 'Critical' },
+};
+
+// Define a consistent order for priorities
+const priorityOrder: Record<BlueprintPriority, number> = {
+    'Critical': 4,
+    'High': 3,
+    'Medium': 2,
+    'Low': 1,
 };
 
 const statusOptions: BlueprintStatus[] = ['Pending', 'In Progress', 'Completed', 'On Hold'];
@@ -43,6 +51,8 @@ export const ForgeView: React.FC<ForgeViewProps> = ({ blueprints, onAddBlueprint
     const [isLoading, setIsLoading] = useState(false);
     const [knowledgeResult, setKnowledgeResult] = useState('');
     const [error, setError] = useState('');
+
+    const [sortFilter, setSortFilter] = useState<'All' | BlueprintPriority>('All'); // New state for sorting
 
     const handleAddBlueprint = (e: React.FormEvent) => {
         e.preventDefault();
@@ -74,6 +84,28 @@ export const ForgeView: React.FC<ForgeViewProps> = ({ blueprints, onAddBlueprint
         }
     };
 
+    // Memoized sorting and filtering logic
+    const sortedAndFilteredBlueprints = useMemo(() => {
+        let tempBlueprints = [...blueprints];
+
+        if (sortFilter !== 'All') {
+            tempBlueprints = tempBlueprints.filter(bp => bp.priority === sortFilter);
+        }
+
+        tempBlueprints.sort((a, b) => {
+            // Sort by priority (Critical > High > Medium > Low)
+            const priorityA = priorityOrder[a.priority];
+            const priorityB = priorityOrder[b.priority];
+            if (priorityB !== priorityA) {
+                return priorityB - priorityA; // Sort by priority descending
+            }
+            // Secondary sort by timestamp (newest first) if priorities are equal
+            return b.timestamp.getTime() - a.timestamp.getTime();
+        });
+
+        return tempBlueprints;
+    }, [blueprints, sortFilter]);
+
     return (
         <div className="h-full flex flex-col bg-gray-900 rounded-lg">
             <div className="p-4 border-b-4 border-black sticky top-0 z-10 bg-gray-800 rounded-t-lg">
@@ -90,17 +122,30 @@ export const ForgeView: React.FC<ForgeViewProps> = ({ blueprints, onAddBlueprint
                             <input type="text" value={newTitle} onChange={e => setNewTitle(e.target.value)} placeholder="Blueprint Title" className="w-full bg-gray-900/80 border-2 border-black rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-violet-500" required />
                             <textarea value={newDescription} onChange={e => setNewDescription(e.target.value)} placeholder="Description..." className="w-full h-20 bg-gray-900/80 border-2 border-black rounded-lg p-2 resize-none focus:outline-none focus:ring-2 focus:ring-violet-500" required />
                             <div className="flex items-center gap-4">
-                                <select value={newPriority} onChange={e => setNewPriority(e.target.value as BlueprintPriority)} className="w-full bg-gray-900/80 border-2 border-black rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-violet-500">
-                                    {Object.keys(priorityMap).map(p => <option key={p} value={p}>{(p as BlueprintPriority)} Priority</option>)}
+                                <select value={newPriority} onChange={e => setNewPriority(e.target.value as BlueprintPriority)} className="w-full bg-gray-900/80 border-2 border-black rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-violet-500 text-gray-300">
+                                    {Object.keys(priorityMap).map(p => <option key={p} value={p}>{priorityMap[p as BlueprintPriority].label} Priority</option>)}
                                 </select>
                                 <button type="submit" className="comic-button bg-violet-600 hover:bg-violet-700 text-white px-4 py-2 flex-shrink-0">Add Task</button>
                             </div>
                         </div>
                     </form>
                     <div className="flex-1 comic-panel bg-black/50 overflow-hidden flex flex-col">
-                         <h3 className="font-comic-header text-2xl text-violet-300 border-b-2 border-black p-3">Active Blueprints</h3>
+                         <div className="p-3 border-b-2 border-black flex items-center justify-between">
+                            <h3 className="font-comic-header text-2xl text-violet-300">Active Blueprints</h3>
+                            <select 
+                                value={sortFilter}
+                                onChange={e => setSortFilter(e.target.value as 'All' | BlueprintPriority)}
+                                className="bg-gray-900/80 border-2 border-black rounded-lg p-1 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 text-gray-300"
+                            >
+                                <option value="All">Sort: All</option>
+                                <option value="Critical">Sort: Critical</option>
+                                <option value="High">Sort: High</option>
+                                <option value="Medium">Sort: Medium</option>
+                                <option value="Low">Sort: Low</option>
+                            </select>
+                         </div>
                          <div className="flex-1 overflow-y-auto p-3 space-y-3">
-                            {blueprints.length > 0 ? blueprints.sort((a,b) => b.timestamp.getTime() - a.timestamp.getTime()).map(bp => (
+                            {sortedAndFilteredBlueprints.length > 0 ? sortedAndFilteredBlueprints.map(bp => (
                                 <div key={bp.id} className="bg-gray-800/50 rounded-lg border-2 border-black p-3 fade-in">
                                     <div className="flex justify-between items-start gap-2">
                                         <div className="flex-1 min-w-0">
